@@ -39,6 +39,6 @@ This project is a Bus Ticket Booking System implemented in C++ using Object-Orie
 5. **User Info**
 6. **Log Out**
 
-## Authors
+## Author
 
 - Soniya Adhikari - [GitHub Profile](https://github.com/soniyadhikari)
