@@ -95,11 +95,12 @@ public:
     {
         ConsoleColor::setColor(3);
         system("cls");
-        cout << "\n\n\t\t\t\t\t\t\t\t~~USER REGISTRATION~~\n\n";
+        cout << "\n\t\t\t\t\t\t\t\t~~USER REGISTRATION~~\n";
+        cout << "----------------------------------------------------------------------------------------------------------------------------------------------------\n\n\n";
         ConsoleColor::setColor(7);
 
         string username, password;
-        cout << "\n\n\t\t\t\t\t\tEnter Username: ";
+        cout << "\n\n\n\n\n\t\t\t\t\t\tEnter Username: ";
         cin >> username;
         cout << "\n\t\t\t\t\t\tEnter Password: ";
         cin >> password;
@@ -112,7 +113,7 @@ public:
         userFile << username << " " << password << "\n";
         userFile.close();
         ConsoleColor::setColor(2);
-        cout << "\n\n\t\t\tRegistration successful!.....\n";
+        cout << "\n\n\n\n\n\t\t\t\tRegistration successful!.....\n\n\n\n";
         pressEnterToContinue();
         system("cls");
     }
@@ -182,12 +183,15 @@ public:
         if (isBooking)
         {
             ConsoleColor::setColor(3);
-            cout << "\t\t\t\t\t\t\t\t~~BOOK TICKET~~\n\n";
+            cout << "\t\t\t\t\t\t\t\t~~BOOK TICKET~~\n";
+            cout << "----------------------------------------------------------------------------------------------------------------------------------------------------\n\n\n";
+            
         }
         else
         {
             ConsoleColor::setColor(3);
-            cout << "\t\t\t\t\t\t\t\t~~CANCEL BOOKING~~\n\n";
+            cout << "\t\t\t\t\t\t\t\t~~CANCEL BOOKING~~\n";
+            cout << "----------------------------------------------------------------------------------------------------------------------------------------------------\n\n\n";
         }
         ConsoleColor::setColor(7);
 
@@ -336,9 +340,11 @@ public:
     void displayBooking()
     {
         system("cls");
+        ConsoleColor::setColor(3);
         cout << "\t\t\t\t\t\t\t\t~~~BOOKING DISPLAY~\n";
         cout << "----------------------------------------------------------------------------------------------------------------------------------------------------\n\n";
-        ifstream busFile("buses.txt");
+        ConsoleColor::setColor(7);
+		ifstream busFile("buses.txt");
         if (!busFile)
         {
             cout << "\n\n\n\n\t\t\t\t\t\tError opening file.\n";
@@ -354,15 +360,19 @@ public:
             buses.push_back(bus);
         }
         busFile.close();
-        string user;
-        cout << "\t\t\tEnter your name: ";
-        cin >> user;
+        cout<<"\n\n\t\tAre you a admin? (y/n):  ";
+        char ch;
+        cin >>ch;
+		if (ch=='y'|| ch=='Y'){
+        cout<<"\n\n\n\t\tEnter password:  ";
+        string pw;
+        cin>>pw;
+        if (pw=="admin"){
         string busId;
-        cout << "\t\t\tEnter Bus ID: ";
+        cout << "\n\n\t\tEnter Bus ID: ";
         cin >> busId;
         cout << "\n\n\n\n\t\t\t\t\t\tBooking Details\n";
         cout << "\t\t\t\t\t\t------------------\n";
-        cout << "\t\t\t\t\t\tName: " << user << "\n";
         cout << "\t\t\t\t\t\tBus ID: " << busId << "\n\n";
         for (size_t i = 0; i < buses.size(); ++i)
         {
@@ -385,13 +395,25 @@ public:
             }
         }
         cout << "\n\n\n\t\t\t\t\t\t\tBus not found.\n";
-    }
+    }else {cout<<"\n\n\n\t\t\t The password you've entered is wrong.";   return;}
+	}else {cout<<"\n\n\n\t\t\t Sorry. This feature is only for admin.";  return;}
+	}
     void userInfo()
     {
         system("cls");
+        ConsoleColor::setColor(3);
         cout << "\t\t\t\t\t\t\t\t~~~USER INFORMATION~\n";
-        cout << "----------------------------------------------------------------------------------------------------------------------------------------------------\n\n";
-        ifstream userFile("users.txt", ios::in | ios::binary);
+        cout << "----------------------------------------------------------------------------------------------------------------------------------------------------\n\n\n";
+        ConsoleColor::setColor(7);
+		cout<<"\n\n\t\tAre you a admin? (y/n):  ";
+        char ch;
+        cin >>ch;
+		if (ch=='y'|| ch=='Y'){
+        cout<<"\n\n\n\t\tEnter password:  ";
+        string pw;
+        cin>>pw;
+        if (pw=="admin"){
+		ifstream userFile("users.txt", ios::in | ios::binary);
         if (!userFile)
         {
             cout << "\n\n\n\n\t\t\t\t\t\tError opening file.\n";
@@ -406,7 +428,9 @@ public:
             cout << "\n\t\t\t\t\t\tPassword: " << password << "\n";
         }
         userFile.close();
-    }
+        }else {cout<<"\n\n\n\t\t\t The password you've entered is wrong.";   return;}
+    }else {cout<<"\n\n\n\t\t\t Sorry. This feature is only for admin.";  return;}
+	}
     void displayBuses()
     {
         system("cls");
@@ -433,7 +457,8 @@ public:
         }
         checkFile.close();
         ConsoleColor::setColor(3);
-        cout << "\t\t\t\t\t\t\t\t~~DISPLAY BUSES~~\n\n";
+        cout << "\t\t\t\t\t\t\t\t~~DISPLAY BUSES~~\n";
+        cout << "----------------------------------------------------------------------------------------------------------------------------------------------------\n\n\n";
         ConsoleColor::setColor(7);
         ifstream busFile("buses.txt");
         if (!busFile)
@@ -490,12 +515,9 @@ int main()
     cout << "\t\t\t\t\t        =                 BOOKING                   =\n";
     cout << "\t\t\t\t\t        =                  SYSTEM                   =\n";
     cout << "\t\t\t\t\t        =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=\n";
-
-    ConsoleColor::setColor(7);
-    cout << "\n\n\t\t\t\t\t  **-**-**-**-**-**-**-**-**-**-**-**-**-**-**-**-**-**-**\n";
-    ConsoleColor::setColor(7);
-    printf("\n\n\n\n\n\n\n\t\t\t\t\t Enter any key to continue.....");
-    getch();
+    ConsoleColor::setColor(3);
+    cout << "\n\t\t\t\t\t  **-**-**-**-**-**-**-**-**-**-**-**-**-**-**-**-**-**-**\n\n\n\n\n";
+    pressEnterToContinue();
     system("cls");
 
     int choice;
@@ -503,7 +525,7 @@ int main()
     {
         system("cls");
         ConsoleColor::setColor(3);
-        cout << "\n\n\n\n\n\n\n\t\t\t\t\t\t---------------------LOGIN--------------------\n\n\n\n";
+        cout << "\n\n\n\n\n\n\n\t\t\t\t\t\t---------------------~LOGIN~--------------------\n\n\n\n";
 
         ConsoleColor::setColor(7);
         cout << "\n\n\t\t\t\t\t\t1. Register\n";
@@ -522,7 +544,8 @@ int main()
             system("cls");
             string username, password;
             ConsoleColor::setColor(3);
-            cout << "\n\n\t\t\t\t\t\t\t\t~~USER LOGIN~~\n\n";
+            cout << "\n\t\t\t\t\t\t\t\t~~USER LOGIN~~\n";
+            cout << "----------------------------------------------------------------------------------------------------------------------------------------------------\n\n\n";
             ConsoleColor::setColor(7);
             cout << "\n\t\tEnter Username: ";
             cin >> username;
