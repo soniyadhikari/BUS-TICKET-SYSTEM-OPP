@@ -2,8 +2,8 @@
 #include <fstream>
 #include <string>
 #include <vector>
-#include <conio.h>
-#include <windows.h>
+#include <conio.h>   //for getch()
+#include <windows.h> //for colour
 #include <cstdio>
 #include <algorithm>
 using namespace std;
@@ -29,7 +29,7 @@ class Bus
 public:
     string bus_id;
     int capacity;
-    vector<bool> seats;
+    vector<bool> seats; // true for booked (1)
     Bus(string id, int cap) : bus_id(id), capacity(cap), seats(cap, false) {}
     string getBusID() const { return bus_id; }
     int getCapacity() const { return capacity; }
@@ -72,8 +72,8 @@ public:
     User() {}
     User(string u, string p) : username(u), password(p) {}
     virtual ~User() {}
-    virtual void userMenu() = 0; // Pure virtual function for user menu
-    static bool login(const string &user, const string &pass)
+    virtual void userMenu() = 0;                              // Pure virtual function for user menu
+    static bool login(const string &user, const string &pass) // checks if entered details matched any stored details
     {
         ifstream userFile("users.txt");
         if (!userFile)
@@ -180,19 +180,9 @@ public:
     void manageBooking(bool isBooking)
     {
         system("cls");
-        if (isBooking)
-        {
-            ConsoleColor::setColor(3);
-            cout << "\t\t\t\t\t\t\t\t~~BOOK TICKET~~\n";
-            cout << "----------------------------------------------------------------------------------------------------------------------------------------------------\n\n\n";
-            
-        }
-        else
-        {
-            ConsoleColor::setColor(3);
-            cout << "\t\t\t\t\t\t\t\t~~CANCEL BOOKING~~\n";
-            cout << "----------------------------------------------------------------------------------------------------------------------------------------------------\n\n\n";
-        }
+        ConsoleColor::setColor(3);
+        cout << "\t\t\t\t\t\t\t\t" << (isBooking ? "~~BOOK TICKET~~" : "~~CANCEL BOOKING~~") << "\n";
+        cout << "----------------------------------------------------------------------------------------------------------------------------------------------------\n\n\n";
         ConsoleColor::setColor(7);
 
         string busId, userName;
@@ -206,131 +196,264 @@ public:
         vector<Bus> buses;
         string id;
         int cap;
+
         while (busFile >> id >> cap)
         {
             Bus bus(id, cap);
             bus.loadSeatsFromFile(busFile);
             buses.push_back(bus);
         }
+        busFile.close();
+
         bool busFound = false;
+
         for (size_t i = 0; i < buses.size(); ++i)
         {
             if (buses[i].bus_id == busId)
             {
                 busFound = true;
+
                 if (isBooking)
-                    cout << "\n\n\t\tAVAILABLE SEAT NUMBERS: \n";
-                else
-                    cout << "\n\n\t\t BOOKED SEAT NUMBERS : ";
-                for (size_t j = 0; j < buses[i].seats.size(); ++j)
                 {
-                    if (isBooking)
+
+                    ifstream inFile((userName + "_bookings.txt").c_str());
+                    string tempName, tempBusId;
+                    bool userExists = false;
+                    streampos userPosition;
+
+                    while (inFile >> tempName >> tempBusId)
+                    {
+                        if (tempName == userName && tempBusId == busId)
+                        {
+                            userExists = true;
+                            userPosition = inFile.tellg();
+                            break;
+                        }
+
+                        while (inFile.peek() != '\n' && inFile.good())
+                        {
+                            inFile.ignore(100, ' ');
+                        }
+                    }
+
+                    inFile.close();
+
+                    cout << "\n\n\t\tAVAILABLE SEAT NUMBERS: \n";
+                    for (size_t j = 0; j < buses[i].seats.size(); ++j)
                     {
                         if (!buses[i].seats[j])
                         {
-                            if (j % 2 == 0)
-                                ConsoleColor::setColor(2);
-                            else
-                                ConsoleColor::setColor(11);
+                            ConsoleColor::setColor((j % 2 == 0) ? 2 : 11);
                             cout << j + 1 << " ";
                         }
                     }
-                    else
-                    {
-                        if (buses[i].seats[j])
-                            cout << j + 1 << " ";
-                    }
-                }
-                if (isBooking)
-                {
                     ConsoleColor::setColor(11);
                     cout << "\n\n\t\tWindow seats --> Sky blue\t\t   SEATS ARE ARRANGED AS::";
                     ConsoleColor::setColor(2);
                     cout << "\n\t\tAisle seats --> Green";
                     ConsoleColor::setColor(7);
                     cout << "    \t\t||  1    2       4    3  ||\n\t\t\t\t\t\t\t||  5    6       8    7  ||\n\t\t\t\t\t\t\t||  9    10      12   11 ||";
-                }
-                cout << "\n";
-                int numSeats;
-                cout << "\n\t\tEnter number of seats to " << (isBooking ? "book" : "cancel") << ": ";
-                cin >> numSeats;
-                if (numSeats > buses[i].capacity)
-                {
-                    ConsoleColor::setColor(4);
-                    cout << "\n\t\tInvalid number of seats to book : " << numSeats << "\n";
-                    return;
-                }
-                else if (numSeats > 0)
-                {
+
+                    int numSeats;
+                    cout << "\n\t\tEnter number of seats to book: ";
+                    cin >> numSeats;
+
+                    if (numSeats > buses[i].capacity || numSeats <= 0)
+                    {
+                        ConsoleColor::setColor(4);
+                        cout << "\n\t\tInvalid number of seats to book: " << numSeats << "\n";
+                        return;
+                    }
+
                     vector<int> seatNumbers(numSeats);
-                    cout << "\n\t\tEnter seat numbers to " << (isBooking ? "book" : "cancel") << ": ";
+                    cout << "\n\t\tEnter seat numbers to book: ";
                     for (int j = 0; j < numSeats; ++j)
                     {
                         cin >> seatNumbers[j];
-                        if (seatNumbers[j] <= 0 || seatNumbers[j] > buses[i].capacity || buses[i].seats[seatNumbers[j] - 1] == isBooking)
+                        if (seatNumbers[j] <= 0 || seatNumbers[j] > buses[i].capacity || buses[i].seats[seatNumbers[j] - 1])
                         {
                             ConsoleColor::setColor(4);
                             cout << "\n\t\tInvalid seat number: " << seatNumbers[j] << "\n";
                             return;
                         }
                     }
+
                     for (int j = 0; j < numSeats; ++j)
                     {
-                        buses[i].seats[seatNumbers[j] - 1] = isBooking;
+                        buses[i].seats[seatNumbers[j] - 1] = true;
                     }
+
                     ofstream outFile("buses.txt");
-                    for (size_t i = 0; i < buses.size(); ++i)
+                    for (size_t k = 0; k < buses.size(); ++k)
                     {
-                        buses[i].saveSeatsToFile(outFile);
+                        buses[k].saveSeatsToFile(outFile);
                     }
-                    ifstream inFile("user_bookings.txt");
+                    outFile.close();
+
+                    ofstream outFileUser((userName + "_bookings.txt").c_str(), ios::in | ios::out | ios::app);
+                    if (userExists)
+                    {
+                        outFileUser.seekp(userPosition);
+                        for (int j = 0; j < numSeats; ++j)
+                        {
+                            outFileUser << seatNumbers[j] << " ";
+                        }
+                        outFileUser << "\n";
+                    }
+                    else
+                    {
+                        outFileUser << userName << " " << busId << " ";
+                        for (int j = 0; j < numSeats; ++j)
+                        {
+                            outFileUser << seatNumbers[j] << " ";
+                        }
+                        outFileUser << "\n";
+                    }
+                    outFileUser.close();
+
+                    ConsoleColor::setColor(2);
+                    cout << "\n\nBooking successful!\n";
+                }
+
+                else
+                {
+                    cout << "\n\n\t\tBOOKED SEAT NUMBERS: ";
+                    ifstream userFile((userName + "_bookings.txt").c_str());
+                    vector<int> bookedSeats;
+                    bool foundSeats = false;
+                    string tempName, tempBusId;
+
+                    while (userFile >> tempName >> tempBusId)
+                    {
+                        if (tempName == userName && tempBusId == busId)
+                        {
+                            foundSeats = true;
+                            int seat;
+                            while (userFile >> seat)
+                            {
+                                bookedSeats.push_back(seat);
+                            }
+                            break;
+                        }
+                        else
+                        {
+                            while (userFile.peek() != '\n' && userFile.good())
+                            {
+                                userFile.ignore(100, ' ');
+                            }
+                        }
+                    }
+                    userFile.close();
+
+                    if (!foundSeats)
+                    {
+                        ConsoleColor::setColor(4);
+                        cout << "\n\t\tNo booking available for " << userName << " on bus ID " << busId << ".\n";
+                        return;
+                    }
+
+                    for (size_t j = 0; j < bookedSeats.size(); ++j)
+                    {
+                        cout << bookedSeats[j] << " ";
+                    }
+
+                    cout << "\n";
+                    int numSeats;
+                    cout << "\n\t\tEnter number of seats to cancel: ";
+                    cin >> numSeats;
+
+                    if (numSeats > bookedSeats.size() || numSeats <= 0)
+                    {
+                        ConsoleColor::setColor(4);
+                        cout << "\n\t\tInvalid number of seats to cancel: " << numSeats << "\n";
+                        return;
+                    }
+
+                    vector<int> seatNumbers(numSeats);
+                    cout << "\n\t\tEnter seat numbers to cancel: ";
+                    for (int j = 0; j < numSeats; ++j)
+                    {
+                        cin >> seatNumbers[j];
+                        if (find(bookedSeats.begin(), bookedSeats.end(), seatNumbers[j]) == bookedSeats.end())
+                        {
+                            ConsoleColor::setColor(4);
+                            cout << "\n\t\tInvalid seat number: " << seatNumbers[j] << "\n";
+                            return;
+                        }
+                    }
+
+                    for (int j = 0; j < numSeats; ++j)
+                    {
+                        buses[i].seats[seatNumbers[j] - 1] = false;
+                    }
+
+                    ifstream inFile((userName + "_bookings.txt").c_str());
                     ofstream tempFile("temp.txt");
                     string name, id;
+                    bool allSeatsCanceled = true;
+
                     while (inFile >> name >> id)
                     {
-                        vector<int> bookedSeats;
-                        int seat;
-                        while (inFile >> seat)
-                        {
-                            bookedSeats.push_back(seat);
-                        }
+                        vector<int> updatedBookedSeats;
                         if (name == userName && id == busId)
                         {
-                            if (isBooking)
+                            int seat;
+                            while (inFile >> seat)
                             {
-                                bookedSeats.insert(bookedSeats.end(), seatNumbers.begin(), seatNumbers.end());
-                            }
-                            else
-                            {
-                                for (int j = 0; j < numSeats; ++j)
+                                if (find(seatNumbers.begin(), seatNumbers.end(), seat) == seatNumbers.end())
                                 {
-                                    bookedSeats.erase(remove(bookedSeats.begin(), bookedSeats.end(), seatNumbers[j]), bookedSeats.end());
+                                    updatedBookedSeats.push_back(seat);
+                                    allSeatsCanceled = false;
                                 }
                             }
+                            if (!updatedBookedSeats.empty())
+                            {
+                                tempFile << name << " " << id << " ";
+                                for (size_t j = 0; j < updatedBookedSeats.size(); ++j)
+                                {
+                                    tempFile << updatedBookedSeats[j] << " ";
+                                }
+                                tempFile << "\n";
+                            }
                         }
-                        tempFile << name << " " << id << " ";
-                        for (size_t j = 0; j < bookedSeats.size(); ++j)
+                        else
                         {
-                            tempFile << bookedSeats[j] << " ";
+                            tempFile << name << " " << id << " ";
+                            while (inFile.peek() != '\n' && inFile.good())
+                            {
+                                int seat;
+                                inFile >> seat;
+                                tempFile << seat << " ";
+                            }
+                            tempFile << "\n";
                         }
-                        tempFile << "\n";
                     }
                     inFile.close();
                     tempFile.close();
-                    std::remove("user_bookings.txt");             // Use std::remove to delete the file
-                    std::rename("temp.txt", "user_bookings.txt"); // Use std::rename to rename the file
+                    remove((userName + "_bookings.txt").c_str());
+                    rename("temp.txt", (userName + "_bookings.txt").c_str());
+
+                    if (allSeatsCanceled)
+                    {
+                        remove((userName + "_bookings.txt").c_str());
+                        ConsoleColor::setColor(2);
+                        cout << "\n\nAll bookings canceled. Booking file deleted.\n";
+                    }
+
+                    ofstream outFile("buses.txt");
+                    for (size_t k = 0; k < buses.size(); ++k)
+                    {
+                        buses[k].saveSeatsToFile(outFile);
+                    }
+                    outFile.close();
+
                     ConsoleColor::setColor(2);
-                    cout << "\n\n"
-                         << (isBooking ? "Booking" : "Cancellation") << " successful!\n";
-                }
-                else
-                {
-                    ConsoleColor::setColor(4);
-                    cout << "\n\t\tNumber of seats must be greater than 0.\n";
+                    cout << "\n\nCancellation successful!\n";
                 }
                 break;
             }
         }
+
         if (!busFound)
         {
             ConsoleColor::setColor(4);
@@ -344,60 +467,72 @@ public:
         cout << "\t\t\t\t\t\t\t\t~~~BOOKING DISPLAY~\n";
         cout << "----------------------------------------------------------------------------------------------------------------------------------------------------\n\n";
         ConsoleColor::setColor(7);
-		ifstream busFile("buses.txt");
+        ifstream busFile("buses.txt");
         if (!busFile)
         {
             cout << "\n\n\n\n\t\t\t\t\t\tError opening file.\n";
             return;
         }
-        vector<Bus> buses;
+        vector<Bus> buses; // buses is a vector that stores multiple bus objects
         string id;
         int cap;
         while (busFile >> id >> cap)
         {
             Bus bus(id, cap);
-            bus.loadSeatsFromFile(busFile);
-            buses.push_back(bus);
+            bus.loadSeatsFromFile(busFile); // this function gives bus seat info (booked/not)
+            buses.push_back(bus);           // bus object is added to the buses vector
         }
         busFile.close();
-        cout<<"\n\n\t\tAre you a admin? (y/n):  ";
+        cout << "\n\n\t\tAre you a admin? (y/n):  ";
         char ch;
-        cin >>ch;
-		if (ch=='y'|| ch=='Y'){
-        cout<<"\n\n\n\t\tEnter password:  ";
-        string pw;
-        cin>>pw;
-        if (pw=="admin"){
-        string busId;
-        cout << "\n\n\t\tEnter Bus ID: ";
-        cin >> busId;
-        cout << "\n\n\n\n\t\t\t\t\t\tBooking Details\n";
-        cout << "\t\t\t\t\t\t------------------\n";
-        cout << "\t\t\t\t\t\tBus ID: " << busId << "\n\n";
-        for (size_t i = 0; i < buses.size(); ++i)
+        cin >> ch;
+        if (ch == 'y' || ch == 'Y')
         {
-            if (buses[i].bus_id == busId)
+            cout << "\n\n\n\t\tEnter password:  ";
+            string pw;
+            cin >> pw;
+            if (pw == "admin")
             {
-                int c = 0;
-                cout << "\t\t\t\t\t\tBooked Seats: ";
-                for (size_t j = 0; j < buses[i].seats.size(); ++j)
+                string busId;
+                cout << "\n\n\t\tEnter Bus ID: ";
+                cin >> busId;
+                cout << "\n\n\n\n\t\t\t\t\t\tBooking Details\n";
+                cout << "\t\t\t\t\t\t------------------\n";
+                cout << "\t\t\t\t\t\tBus ID: " << busId << "\n\n";
+                for (size_t i = 0; i < buses.size(); ++i) // checks if i is less than no of elements in bus vector
                 {
-                    if (buses[i].seats[j])
+                    if (buses[i].bus_id == busId) // The function searches for the bus in the buses vector
                     {
-                        c++;
-                        cout << j + 1 << " ";
+                        int c = 0;
+                        cout << "\t\t\t\t\t\tBooked Seats: ";
+                        for (size_t j = 0; j < buses[i].seats.size(); ++j)
+                        {
+                            if (buses[i].seats[j])
+                            {
+                                c++;
+                                cout << j + 1 << " ";
+                            }
+                        }
+                        if (!c)
+                            cout << "0" << " ";
+                        cout << "\n";
+                        return;
                     }
                 }
-                if (!c)
-                    cout << "0" << " ";
-                cout << "\n";
+                cout << "\n\n\n\t\t\t\t\t\t\tBus not found.\n";
+            }
+            else
+            {
+                cout << "\n\n\n\t\t\t The password you've entered is wrong.";
                 return;
             }
         }
-        cout << "\n\n\n\t\t\t\t\t\t\tBus not found.\n";
-    }else {cout<<"\n\n\n\t\t\t The password you've entered is wrong.";   return;}
-	}else {cout<<"\n\n\n\t\t\t Sorry. This feature is only for admin.";  return;}
-	}
+        else
+        {
+            cout << "\n\n\n\t\t\t Sorry. This feature is only for admin.";
+            return;
+        }
+    }
     void userInfo()
     {
         system("cls");
@@ -405,32 +540,44 @@ public:
         cout << "\t\t\t\t\t\t\t\t~~~USER INFORMATION~\n";
         cout << "----------------------------------------------------------------------------------------------------------------------------------------------------\n\n\n";
         ConsoleColor::setColor(7);
-		cout<<"\n\n\t\tAre you a admin? (y/n):  ";
+        cout << "\n\n\t\tAre you a admin? (y/n):  ";
         char ch;
-        cin >>ch;
-		if (ch=='y'|| ch=='Y'){
-        cout<<"\n\n\n\t\tEnter password:  ";
-        string pw;
-        cin>>pw;
-        if (pw=="admin"){
-		ifstream userFile("users.txt", ios::in | ios::binary);
-        if (!userFile)
+        cin >> ch;
+        if (ch == 'y' || ch == 'Y')
         {
-            cout << "\n\n\n\n\t\t\t\t\t\tError opening file.\n";
+            cout << "\n\n\n\t\tEnter password:  ";
+            string pw;
+            cin >> pw;
+            if (pw == "admin")
+            {
+                ifstream userFile("users.txt", ios::in | ios::binary);
+                if (!userFile)
+                {
+                    cout << "\n\n\n\n\t\t\t\t\t\tError opening file.\n";
+                    return;
+                }
+                string username, password;
+                cout << "\n\n\t\t\t\t\t\tUser Details\n";
+                cout << "\t\t\t\t\t\t--------------\n";
+                while (userFile >> username >> password)
+                {
+                    cout << "\n\t\t\t\t\t\tUsername: " << username;
+                    cout << "\n\t\t\t\t\t\tPassword: " << password << "\n";
+                }
+                userFile.close();
+            }
+            else
+            {
+                cout << "\n\n\n\t\t\t The password you've entered is wrong.";
+                return;
+            }
+        }
+        else
+        {
+            cout << "\n\n\n\t\t\t Sorry. This feature is only for admin.";
             return;
         }
-        string username, password;
-        cout << "\n\n\t\t\t\t\t\tUser Details\n";
-        cout << "\t\t\t\t\t\t--------------\n";
-        while (userFile >> username >> password)
-        {
-            cout << "\n\t\t\t\t\t\tUsername: " << username;
-            cout << "\n\t\t\t\t\t\tPassword: " << password << "\n";
-        }
-        userFile.close();
-        }else {cout<<"\n\n\n\t\t\t The password you've entered is wrong.";   return;}
-    }else {cout<<"\n\n\n\t\t\t Sorry. This feature is only for admin.";  return;}
-	}
+    }
     void displayBuses()
     {
         system("cls");
@@ -439,6 +586,7 @@ public:
             Bus("BUS002", 40),
             Bus("BUS003", 32),
             Bus("BUS004", 60)};
+
         ifstream checkFile("buses.txt");
         if (!checkFile)
         {
@@ -449,17 +597,19 @@ public:
                 cout << "\n\nError opening file for writing.\n";
                 return;
             }
-            for (int i = 0; i < 4; ++i)
+            for (int i = 0; i < sizeof(buses) / sizeof(buses[0]); ++i)
             {
                 busFile << buses[i];
             }
             busFile.close();
         }
         checkFile.close();
+
         ConsoleColor::setColor(3);
         cout << "\t\t\t\t\t\t\t\t~~DISPLAY BUSES~~\n";
         cout << "----------------------------------------------------------------------------------------------------------------------------------------------------\n\n\n";
         ConsoleColor::setColor(7);
+
         ifstream busFile("buses.txt");
         if (!busFile)
         {
@@ -467,8 +617,10 @@ public:
             cout << "\n\nError opening file.\n";
             return;
         }
+
         string id;
         int cap;
+
         while (busFile >> id >> cap)
         {
             Bus bus(id, cap);
@@ -477,19 +629,11 @@ public:
 
             for (size_t i = 0; i < bus.seats.size(); ++i)
             {
-                if (bus.seats[i])
-                {
-                    ConsoleColor::setColor(4);
-                    cout << "N ";
-                }
-                else
-                {
-                    ConsoleColor::setColor(2);
-                    cout << "Y ";
-                }
-                ConsoleColor::setColor(7);
+                ConsoleColor::setColor(bus.seats[i] ? 4 : 2); // Red for booked, Green for available
+                cout << (bus.seats[i] ? "N " : "Y ");         // Display 'N' for booked, 'Y' for available
             }
 
+            ConsoleColor::setColor(7);
             cout << "\n----------------------------------------------------------------------------------------------------------------------------------------------------\n\n";
         }
         ConsoleColor::setColor(2);
