@@ -218,24 +218,11 @@ public:
 
                     ifstream inFile((userName + "_" + busId + "_bookings.txt").c_str()); // soniya_bookings.txt c.str= converts string to const char which is required for ifstream
                     string tempName, tempBusId;
-                    bool userExists = false;
-                    streampos userPosition; // used to save the position of the current read/write pointer in the file.
-
-                    while (inFile >> tempName >> tempBusId)
+                    bool userExists = true;
+                    if (!inFile)
                     {
-                        if (tempName == userName && tempBusId == busId)
-                        {
-                            userExists = true;
-                            userPosition = inFile.tellg(); // sets the current position in user position
-                            break;
-                        }
-
-                        while (inFile.peek() != '\n' && inFile.good()) // if match is not found the loop skips rest of the current line to avoid reading incomplete data
-                        {
-                            inFile.ignore(100, ' ');
-                        }
+                        userExists = false;
                     }
-
                     inFile.close();
 
                     cout << "\n\n\t\tAVAILABLE SEAT NUMBERS: \n";
@@ -293,7 +280,6 @@ public:
                     ofstream outFileUser((userName + "_" + busId + "_bookings.txt").c_str(), ios::in | ios::out | ios::app); // opens in append mode
                     if (userExists)                                                                                          // if booking user already exists
                     {
-                        outFileUser.seekp(userPosition); // write in the position stored in userposition
                         for (int j = 0; j < numSeats; ++j)
                         {
                             outFileUser << seatNumbers[j] << " ";
@@ -320,28 +306,17 @@ public:
                     cout << "\n\n\t\tBOOKED SEAT NUMBERS: ";
                     ifstream userFile((userName + "_" + busId + "_bookings.txt").c_str());
                     vector<int> bookedSeats;
-                    bool foundSeats = false;
-                    string tempName, tempBusId;
-
-                    while (userFile >> tempName >> tempBusId)
+                    bool foundSeats = true;
+                    if (!userFile)
                     {
-                        if (tempName == userName && tempBusId == busId)
-                        {
-                            foundSeats = true;
-                            int seat;
-                            while (userFile >> seat)
-                            {
-                                bookedSeats.push_back(seat);
-                            }
-                            break;
-                        }
-                        else
-                        {
-                            while (userFile.peek() != '\n' && userFile.good()) // good=eof has not been reached  and checks if next character is not new line character
-                            {
-                                userFile.ignore(100, ' '); // ignore upto 100 character until space character
-                            }
-                        }
+                        foundSeats = false;
+                    }
+                    string name, ID;
+                    int seat;
+                    userFile >> name >> id;
+                    while (userFile >> seat)
+                    {
+                        bookedSeats.push_back(seat);
                     }
                     userFile.close();
 
@@ -356,7 +331,6 @@ public:
                     {
                         cout << bookedSeats[j] << " ";
                     }
-
                     cout << "\n";
                     int numSeats;
                     cout << "\n\t\tEnter number of seats to cancel: ";
@@ -389,40 +363,35 @@ public:
 
                     ifstream inFile((userName + "_" + busId + "_bookings.txt").c_str());
                     ofstream tempFile("temp.txt");
-                    string name, id;
+
                     bool allSeatsCanceled = true;
 
-                    while (inFile >> name >> id)
+                    vector<int> updatedBookedSeats;
+                    inFile >> name >> ID;
+                    while (inFile >> seat)
                     {
-                        vector<int> updatedBookedSeats;
-                        if (name == userName && id == busId)
+                        if (find(seatNumbers.begin(), seatNumbers.end(), seat) == seatNumbers.end()) // if seat is not found in seatnumbers vector
                         {
-                            int seat;
-                            while (inFile >> seat)
-                            {
-                                if (find(seatNumbers.begin(), seatNumbers.end(), seat) == seatNumbers.end()) // if seat is not found in seatnumbers vector
-                                {
-                                    updatedBookedSeats.push_back(seat);
-                                    allSeatsCanceled = false;
-                                }
-                            }
-                            if (!updatedBookedSeats.empty()) // that is if all seats are not to be cancelled
-                            {
-                                tempFile << name << " " << id << " ";
-                                for (size_t j = 0; j < updatedBookedSeats.size(); ++j)
-                                {
-                                    tempFile << updatedBookedSeats[j] << " ";
-                                }
-                                tempFile << "\n";
-                            }
+                            updatedBookedSeats.push_back(seat);
+                            allSeatsCanceled = false;
                         }
                     }
+                    if (!updatedBookedSeats.empty()) // that is if all seats are not to be cancelled
+                    {
+                        tempFile << name << " " << id << " ";
+                        for (size_t j = 0; j < updatedBookedSeats.size(); ++j)
+                        {
+                            tempFile << updatedBookedSeats[j] << " ";
+                        }
+                        tempFile << "\n";
+                    }
+
                     inFile.close();
                     tempFile.close();
                     remove((userName + "_" + busId + "_bookings.txt").c_str());
                     rename("temp.txt", (userName + "_" + busId + "_bookings.txt").c_str());
 
-                    if (allSeatsCanceled)
+                    if (allSeatsCanceled) // if all seats are to be cancelled
                     {
                         remove((userName + "_" + busId + "_bookings.txt").c_str());
                         ConsoleColor::setColor(2);
@@ -432,7 +401,7 @@ public:
                     ofstream outFile("buses.txt");
                     for (size_t k = 0; k < buses.size(); ++k)
                     {
-                        buses[k].saveSeatsToFile(outFile);
+                        buses[k].saveSeatsToFile(outFile); // update in a buses.txt
                     }
                     outFile.close();
 
